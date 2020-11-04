@@ -1,21 +1,40 @@
 (ns bresenham.core
-  (:require ))
+  (:require [quil.core :as q]
+            [quil.middleware :as middleware]))
 
 (enable-console-print!)
 
-(println "This text is printed from src/bresenham/core.cljs. Go ahead and edit it and see reloading in action.")
+(def body (.-body js/document))
 
-;; define your app data so that it doesn't get over-written on reload
+(defn create-plane
+  [xdim ydim]
+  (into []
+        (for [_ (range ydim)]
+          (into [] (take xdim (repeat 0))))))
 
-(defonce app-state (atom {:text "Hello world!"}))
+(defn index-plane
+  "Convert cartesian position to position on our plane"
+  [[x y] plane]
+  (let [x-points (count (nth plane 0))
+        y-points (count plane)]
+    [(dec (+ (Math/floor (/ x-points 2)) x))
+     (dec (+ (Math/floor (/ y-points 2)) y))]))
 
+(defn update-plane
+  "Turns on pixel on plane corresponding to pos"
+  [pos plane]
+  (for [i (range (count plane))]
+    (for [j (range (count (nth plane 0)))]
+      (if (or
+            (pos? (nth (nth plane i) j))
+            (= [i j] (index-plane pos plane)))
+        1
+        0))))
 
-(defn on-js-reload []
-  ;; optionally touch your app-state to force rerendering depending on
-  ;; your application
-  ;; (swap! app-state update-in [:__figwheel_counter] inc)
-  )
-
+(defn reset-plane [plane]
+  (into [] (for [_ (range (count plane))]
+             (into [] (for [_ (range (count (nth plane 0)))]
+                        0)))))
 (defn sign
   "Returns the sign of the integer. 0 if it is a zero, -1 for negative numbers and 1 for other natural numbers"
   [x]
@@ -49,3 +68,71 @@
                   :coords (conj coords [x y])})))
            {:p p :prev [x1 y1] :coords [[x1 y1]]})
          (:coords))))
+
+(defn sketch-setup []
+  (q/frame-rate 30)
+  {:plane (create-plane 40 40)      ; each item represents 'pixel' with 0 being off and 1 on
+   :line  (bresenhams [0 1] [6 4])  ; stores points for bresenhams
+   :running? true                   ; set to false to stop animation
+   :counter 0                       ; keeps track of currently drawing point on :line
+   })
+
+(defn sketch-update [state]
+  (if (:running? state)
+    (if (< (:counter state) (count (:line state)))
+      (let [cur (nth (:line state) (:counter state))]
+        (-> state
+            (assoc :plane (update-plane cur (:plane state)))
+            (update :counter inc)))
+      (-> state
+          (assoc :counter 0)
+          (assoc :plane (reset-plane (:plane state)))))
+    state))
+
+(defn draw-axes []
+  (q/stroke-weight 2)
+  (let [half-height (Math/floor (/ (q/height) 2))
+        half-width (Math/floor (/ (q/width) 2))]
+    (q/stroke 255 0 0)
+    (q/line [0 half-height] [(q/width) half-height])
+    (q/line [half-width 0] [half-width (q/height)])))
+
+(defn draw-points [state]
+  (q/stroke-weight 1)
+  (q/stroke 0 0 0)    
+  (let [points (:plane state)
+        point-height (/ (q/height) (count points)) 
+        point-width (/ (q/width) (count (nth points 0)))]
+    (doseq [i (range (count points))]
+      (doseq [j (range (count (nth points 0)))]
+        (if (pos? (nth (nth points i) j))
+          (q/fill 0 255 0)
+          (q/fill 255 255 255))
+        (q/rect (* j point-width) (* i point-height)
+                point-width point-height)))))
+
+(defn sketch-draw [state]
+  (q/background 240)
+  (draw-points state)
+  (draw-axes))
+
+(defn create [canvas]
+ (q/sketch
+   :host canvas
+   :size [1000 800]
+   :draw #'sketch-draw
+   :setup #'sketch-setup
+   :update #'sketch-update
+   :middleware [middleware/fun-mode]
+   :settings (fn []
+               (q/random-seed 666)
+               (q/noise-seed 666))))
+
+(defonce sketch (create "sketch"))
+
+(defn on-js-reload []
+  ;; optionally touch your app-state to force rerendering depending on
+  ;; your application
+  ;; (swap! app-state update-in [:__figwheel_counter] inc)
+  )
+
