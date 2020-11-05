@@ -68,16 +68,16 @@
         b       (if change?  (* 2 (- dx dy)) (* 2 (- dy dx)))]
     (->> (range 0 (if change? dy dx))
          (reduce
-           (fn [{p :p [x-prev y-prev] :prev coords :coords} _]
-             (if (< p 0)
-               (if change?
-                 {:p (+ p a) :prev [x-prev (+ y-prev y-diff)] :coords (conj coords  [x-prev (+ y-prev y-diff)])}
-                 {:p (+ p a) :prev [(+ x-prev x-diff) y-prev] :coords (conj coords [(+ x-prev x-diff) y-prev])})
-               (let [x (+ x-prev x-diff) y (+ y-prev y-diff)]
-                 {:p      (+ p b)
-                  :prev   [x y]
-                  :coords (conj coords [x y])})))
-           {:p p :prev [x1 y1] :coords [[x1 y1]]})
+          (fn [{p :p [x-prev y-prev] :prev coords :coords} _]
+            (if (< p 0)
+              (if change?
+                {:p (+ p a) :prev [x-prev (+ y-prev y-diff)] :coords (conj coords  [x-prev (+ y-prev y-diff)])}
+                {:p (+ p a) :prev [(+ x-prev x-diff) y-prev] :coords (conj coords [(+ x-prev x-diff) y-prev])})
+              (let [x (+ x-prev x-diff) y (+ y-prev y-diff)]
+                {:p      (+ p b)
+                 :prev   [x y]
+                 :coords (conj coords [x y])})))
+          {:p p :prev [x1 y1] :coords [[x1 y1]]})
          (:coords))))
 
 (defn sketch-setup []
