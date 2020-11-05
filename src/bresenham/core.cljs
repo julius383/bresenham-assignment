@@ -15,19 +15,19 @@
 (defn index-plane
   "Convert cartesian position to position on our plane"
   [[x y] plane]
-  (let [x-points (count (nth plane 0))
+  (let [x-points (count (first plane))
         y-points (count plane)]
-    [(dec (+ (Math/floor (/ x-points 2)) x))
-     (dec (+ (Math/floor (/ y-points 2)) y))]))
+    [(+ (Math/floor (/ x-points 2)) x)
+     (dec (- (Math/floor (/ y-points 2)) y))]))
 
 (defn update-plane
   "Turns on pixel on plane corresponding to pos"
   [pos plane]
-  (for [i (range (count plane))]
-    (for [j (range (count (nth plane 0)))]
+  (for [y (range (count plane))]
+    (for [x (range (count (first plane)))]
       (if (or
-            (pos? (nth (nth plane i) j))
-            (= [i j] (index-plane pos plane)))
+            (pos? (nth (nth plane y) x))
+            (= [x y] (index-plane pos plane)))
         1
         0))))
 
@@ -71,10 +71,10 @@
 
 (defn sketch-setup []
   (q/frame-rate 30)
-  {:plane (create-plane 40 40)      ; each item represents 'pixel' with 0 being off and 1 on
-   :line  (bresenhams [0 1] [6 4])  ; stores points for bresenhams
-   :running? true                   ; set to false to stop animation
-   :counter 0                       ; keeps track of currently drawing point on :line
+  {:plane    (create-plane 40 40)     ; each item represents 'pixel' with 0 being off and 1 on
+   :line     (bresenhams [0 1] [6 4]) ; stores points for bresenhams
+   :running? true                     ; set to false to stop animation
+   :counter  0                        ; keeps track of currently drawing point on :line
    })
 
 (defn sketch-update [state]
@@ -92,17 +92,17 @@
 (defn draw-axes []
   (q/stroke-weight 2)
   (let [half-height (Math/floor (/ (q/height) 2))
-        half-width (Math/floor (/ (q/width) 2))]
+        half-width  (Math/floor (/ (q/width) 2))]
     (q/stroke 255 0 0)
     (q/line [0 half-height] [(q/width) half-height])
     (q/line [half-width 0] [half-width (q/height)])))
 
 (defn draw-points [state]
   (q/stroke-weight 1)
-  (q/stroke 0 0 0)    
-  (let [points (:plane state)
-        point-height (/ (q/height) (count points)) 
-        point-width (/ (q/width) (count (nth points 0)))]
+  (q/stroke 0 0 0)
+  (let [points       (:plane state)
+        point-height (/ (q/height) (count points))
+        point-width  (/ (q/width) (count (nth points 0)))]
     (doseq [i (range (count points))]
       (doseq [j (range (count (nth points 0)))]
         (if (pos? (nth (nth points i) j))
@@ -117,16 +117,16 @@
   (draw-axes))
 
 (defn create [canvas]
- (q/sketch
-   :host canvas
-   :size [1000 800]
-   :draw #'sketch-draw
-   :setup #'sketch-setup
-   :update #'sketch-update
-   :middleware [middleware/fun-mode]
-   :settings (fn []
-               (q/random-seed 666)
-               (q/noise-seed 666))))
+  (q/sketch
+    :host canvas
+    :size [1000 800]
+    :draw #'sketch-draw
+    :setup #'sketch-setup
+    :update #'sketch-update
+    :middleware [middleware/fun-mode]
+    :settings (fn []
+                (q/random-seed 666)
+                (q/noise-seed 666))))
 
 (defonce sketch (create "sketch"))
 
