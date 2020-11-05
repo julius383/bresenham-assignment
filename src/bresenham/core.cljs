@@ -20,14 +20,25 @@
     [(+ (Math/floor (/ x-points 2)) x)
      (dec (- (Math/floor (/ y-points 2)) y))]))
 
+(defn reverse-index-plane
+  "Convert plane position to a Cartesian position"
+  [[x-idx y-idx] plane]
+  [(- x-idx (Math/floor (/ (count (first plane)) 2)))
+   (- (Math/floor (/ (count plane) 2)) y-idx)])
+
+(defn plane-pos
+  "Convert mouse points to plane position"
+  [mouse-x mouse-y x-size y-size]
+  [(int (/ mouse-x x-size)) (inc (int (/ mouse-y y-size)))])
+
 (defn update-plane
   "Turns on pixel on plane corresponding to pos"
   [pos plane]
   (for [y (range (count plane))]
     (for [x (range (count (first plane)))]
       (if (or
-            (pos? (nth (nth plane y) x))
-            (= [x y] (index-plane pos plane)))
+           (pos? (nth (nth plane y) x))
+           (= [x y] (index-plane pos plane)))
         1
         0))))
 
@@ -89,6 +100,17 @@
           (assoc :plane (reset-plane (:plane state)))))
     state))
 
+(defn mouse-clicked
+  "Updates the state of the line to be drawn. It will change to plot from
+  the last coordinate to the clicked cell"
+  [state]
+  (let [x-size   (/ (q/width) (count (first (:plane state))))
+        y-size   (/ (q/height) (count (:plane state)))
+        last-pos (last (:line state))
+        cur-pos  (plane-pos (q/mouse-x) (q/mouse-y) x-size y-size)]
+    (assoc state :plane (reset-plane (:plane state)))
+    (assoc state :line (bresenhams last-pos (reverse-index-plane cur-pos (:plane state))))))
+
 (defn draw-axes []
   (q/stroke-weight 2)
   (let [half-height (Math/floor (/ (q/height) 2))
@@ -118,15 +140,16 @@
 
 (defn create [canvas]
   (q/sketch
-    :host canvas
-    :size [1000 800]
-    :draw #'sketch-draw
-    :setup #'sketch-setup
-    :update #'sketch-update
-    :middleware [middleware/fun-mode]
-    :settings (fn []
-                (q/random-seed 666)
-                (q/noise-seed 666))))
+   :host canvas
+   :size [1000 800]
+   :draw #'sketch-draw
+   :setup #'sketch-setup
+   :update #'sketch-update
+   :mouse-clicked #'mouse-clicked
+   :middleware [middleware/fun-mode]
+   :settings (fn []
+               (q/random-seed 666)
+               (q/noise-seed 666))))
 
 (defonce sketch (create "sketch"))
 
