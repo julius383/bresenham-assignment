@@ -81,7 +81,7 @@
          (:coords))))
 
 (defn sketch-setup []
-  (q/frame-rate 30)
+  (q/frame-rate 2)
   {:plane    (create-plane 40 40)     ; each item represents 'pixel' with 0 being off and 1 on
    :line     (bresenhams [0 1] [6 4]) ; stores points for bresenhams
    :running? true                     ; set to false to stop animation
