@@ -15,19 +15,19 @@
 (defn index-plane
   "Convert cartesian position to position on our plane"
   [[x y] plane]
-  (let [x-points (count (nth plane 0))
+  (let [x-points (count (first plane))
         y-points (count plane)]
-    [(dec (+ (Math/floor (/ x-points 2)) x))
-     (dec (+ (Math/floor (/ y-points 2)) y))]))
+    [(+ (Math/floor (/ x-points 2)) x)
+     (dec (- (Math/floor (/ y-points 2)) y))]))
 
 (defn update-plane
   "Turns on pixel on plane corresponding to pos"
   [pos plane]
-  (for [i (range (count plane))]
-    (for [j (range (count (nth plane 0)))]
+  (for [y (range (count plane))]
+    (for [x (range (count (first plane)))]
       (if (or
-            (pos? (nth (nth plane i) j))
-            (= [i j] (index-plane pos plane)))
+            (pos? (nth (nth plane y) x))
+            (= [x y] (index-plane pos plane)))
         1
         0))))
 
